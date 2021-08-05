@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+#make clean && make
+
+for ((i = 1; i <= 1; i++)); do
+    echo "--- Iteration #$i: $(date) ---"
+    ./NDA watermarking/images/dragon.pgm 256 000
+done 2>&1 | tee timing.log
+
+grep 's_ot_time :' timing.log > timing/Sender.log
+grep 'r_ot_time :' timing.log > timing/Recipient.log
+grep 'watermark:' timing.log > timing/Watermark.log
+grep 'ot_time_v' timing.log > timing/totalOT.log
+grep 'join' timing.log > timing/join.log
+grep 'Total :' timing.log > timing/Total.log 
+
+
+ 

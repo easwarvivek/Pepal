@@ -1,0 +1,15 @@
+set output 'graph_image_size.eps'
+set terminal postscript enhanced monochrome dashed dl 4 eps 
+
+set format x "%.0t *10^{%L}"
+set xtics 0, 1000000
+set xlabel "image size" 
+set ylabel "computation time (ms)" 
+
+set key inside top left
+
+plot "eval/result/size.watermarking" using 1:2 with lines title "watermarking" linetype 1, "" using 1:2:3 with errorbars notitle lt -1 lc 0 ,  \
+  "eval/result/size.signature" using 1:2 with lines title "signatures" linetype 2, "" using 1:2:3 with errorbars notitle  lt -1 lc 0,  \
+  "eval/result/size.encryption" using 1:2 with lines title "encryption" linetype 6, "" using 1:2:3 with errorbars notitle lt -1 lc 0,  \
+  "eval/result/size.ot" using 1:2 with lines title "OT" linetype 4, "" using 1:2:3 with errorbars notitle lt -1 lc 0,  \
+  "eval/result/size.detection" using 1:2 with lines title "detection" linetype 8, "" using 1:2:3 with errorbars notitle lt -1 lc 0 

@@ -1,0 +1,567 @@
+#include <iostream>
+#include <fstream>
+#include <stdlib.h>
+#include <cstring>
+#include "crypto.h"
+#include "PBC.h"
+#include "sys/time.h"
+
+#define WM_ALGO "cox"
+#define NEED_INPUT 0
+#define BLIND 0
+
+using namespace std;
+
+//Compute the xor of two arrays
+void xor_array(int xor_len, unsigned char a[], unsigned char b[], unsigned char res[]){
+	for (int i=0; i < xor_len; i++){
+		res[i] = a[i] ^ b[i];
+	}
+}
+
+//Compute the xor of two elements from G1
+void  xor_G1(int size, int xor_len, G1* a, unsigned char b[], unsigned char res[]){
+	// convert a to bytes
+	unsigned char a_tmp[size];
+	a->toBytes(a_tmp);
+
+	xor_array(xor_len, a_tmp, b, res);
+}
+
+// Compute the hash of a element from G1
+void hash_G1(Pairing &e, int len, G1 *arg, G1 *res){
+	unsigned char a[len];
+	arg->toBytes(a);
+	*res = G1(e, a, len);
+}
+
+//Datatype for the elements returned from phase 2
+struct Phase2_return{
+	G1 g_r;
+	unsigned char ** ciphertext;
+	unsigned char ** iv;
+	unsigned char ** enc;
+	int message_len;
+};
+
+// class for the sender in Oblivious transfer
+class OT_Sender{
+	private:
+		int len;
+		Pairing *e;
+		G1 g;
+		unsigned char** ciphertext;
+		unsigned char** key;
+		unsigned char** iv;
+		G1 c;
+		int message_len;
+
+	public:
+    // Constructor 
+		OT_Sender(unsigned char** key, unsigned char ** ciphertext, unsigned char ** iv, int message_len){
+			this->key  = key;
+			this->ciphertext  = ciphertext;
+			this->iv  = iv;
+			this->message_len = message_len;
+		}
+
+    // Initialization
+		G1 init(int len, Pairing &e, G1 g) {
+			this->len = len;
+			this->e = &e;
+			this->g = g;
+
+			c= G1(*this->e, false);
+			return c;
+		}
+		
+    // The code for phase 2
+		Phase2_return phase2(G1 pk0){
+			// Recompute PK_1
+			G1 pk[2]; 
+			pk[0] = pk0;
+			pk[1] = c*(pk[0].inverse());
+	
+			// random r
+			Zr r = Zr(*e,true);
+
+			Phase2_return ret;
+			ret.enc  = (unsigned char **) malloc(sizeof(char) * (2));
+			for (int i = 0; i < 2; i ++){
+				ret.enc[i] = (unsigned char *) malloc (sizeof(char) * (len+1));
+			}
+
+			ret.g_r = g^r;
+			ret.ciphertext=ciphertext;
+			ret.iv=iv;
+			ret.message_len = message_len;
+			// Encryption
+			G1 pk_r[2];
+			G1 h_pk_r[2];
+			for (int i = 0; i <2; i++){
+				ret.enc[i][len] = '\0';
+				// Exponentiation
+				pk_r[i] = pk[i]^r;
+				// Hashing
+				hash_G1(*e, len, &pk_r[i], &h_pk_r[i]);
+				// Encryption
+				xor_G1(len, KEYLENGTH, &h_pk_r[i], key[i], ret.enc[i]);
+			}
+			return ret;
+		}
+		unsigned char ** get_key(){
+			return key;
+		}
+
+		
+};
+// Class for sender 
+class Sender
+{
+	private:
+		char * input_file_name;
+		int sec_par;
+		int message_len;
+		unsigned char *** message;
+		unsigned char *** key;
+		unsigned char *** ciphertext;
+		unsigned char *** iv;
+    G1 g;
+    Zr sk;
+    G1 vk;
+
+	public:
+    // Constructor, also does the first protocol steps
+		Sender(char * input_file_name, int sec_par, Pairing& e)
+		{
+			this->input_file_name = input_file_name;
+			this->sec_par = sec_par;
+
+      // Create message parts
+			message = new unsigned char ** [sec_par];
+
+      // Code for timing
+			timeval tstart, tfinish, tstart2, tfinish2, tstart3, tfinish3;
+			double duration;
+			gettimeofday(&tstart, NULL);
+
+      // Code for watermarking
+			char str[200] ;
+			char wm_algo[20] = WM_ALGO;
+			char gen_param_large[20] = "";
+			char gen_param_small[20] = "-a 0.1";
+			char input1[50] = "";
+			char input2[50] = "";
+			char input3[50] = "";
+      // Some watermarks contain a message
+			if (NEED_INPUT){
+				sprintf(input1,"echo \"I am responsible for this file\" | ");
+				sprintf(input2,"echo \"0\" | ");
+				sprintf(input3,"echo \"1\" | ");
+			}
+
+      // Call external watermarking code
+      
+      //Watermark on entire file
+			sprintf(str," %swatermarking/Meerwald/gen_%s_sig %s -o /tmp/LIME/%s.sig", input1, wm_algo, gen_param_large, wm_algo);
+			system(str);
+			sprintf(str, "watermarking/Meerwald/wm_%s_e -s /tmp/LIME/%s.sig -o /tmp/LIME/%s_out.pgm %s", wm_algo, wm_algo, wm_algo, input_file_name);
+			system(str);
+
+      //split watermarked file into single parts
+			sprintf(str,"pgm_join_split/split /tmp/LIME/%s_out.pgm %d", wm_algo, sec_par);
+			system(str);
+	
+      //Watermark on single parts
+			sprintf(str, "%s watermarking/Meerwald/gen_%s_sig %s -o /tmp/LIME/%s_0.sig", input2, wm_algo, gen_param_small, wm_algo);
+			system(str);
+			sprintf(str, "%s watermarking/Meerwald/gen_%s_sig %s -o /tmp/LIME/%s_1.sig", input3, wm_algo, gen_param_small, wm_algo);
+			system(str);
+
+			for (int i = 0; i< sec_par; i++)
+			{
+				message[i] = new unsigned char * [2];
+				for (int j = 0; j<2; j++)
+				{
+					sprintf(str, "watermarking/Meerwald/wm_%s_e -s /tmp/LIME/%s_%d.sig -o /tmp/LIME/%s_out%d_%d.pgm /tmp/LIME/out%d.pgm",wm_algo,wm_algo,j,wm_algo,j,i,i); 
+					//cout << str << endl;
+					system(str);
+
+          // Read watermarked parts to array
+					sprintf(str, "/tmp/LIME/%s_out%d_%d.pgm", wm_algo, j, i);
+					ifstream fl(str);  
+					fl.seekg( 0, ios::end );  
+					size_t len = fl.tellg();  
+					message [i][j] = new unsigned char[len];  
+					fl.seekg(0, ios::beg);   
+					fl.read((char *) (message [i][j]), len);  
+					fl.close();  
+					message_len = len;
+				}
+			}
+
+			gettimeofday(&tfinish, NULL);
+			duration = (tfinish.tv_sec - tstart.tv_sec) * 1000.0 ;
+			duration += (tfinish.tv_usec - tstart.tv_usec) / 1000.0 ;
+			cout << "watermarking: " << duration << endl;
+
+      // Computation of Signatures (BLS scheme)
+			gettimeofday(&tstart2, NULL);
+
+      int len_of_group_elem_in_bytes = e.get_length_in_bytes_G1();
+      g  = G1(e,true);
+      sk = Zr(e,false); 
+      vk = g ^ sk;
+
+      char *** sig_mes;
+      unsigned char *** sig;
+      sig_mes = new char ** [sec_par];
+      sig = new unsigned char ** [sec_par];
+
+      // Do this for each (watermarked) part of the message
+			for (int i = 0; i< sec_par; i++)
+			{
+        sig_mes [i] = new char* [2];
+        sig [i] = new unsigned char* [2];
+				for (int j = 0; j<2; j++){
+          sig_mes [i][j] = new char [25];
+          sig [i][j] = new unsigned char [len_of_group_elem_in_bytes];
+          sprintf(sig_mes[i][j], "%ld,%d,%d", (long)time(NULL),i,j);
+          G1 hash = G1(e, sig_mes, 25); 
+          G1 signature = hash ^ sk;
+          signature.toBytes(sig[i][j]);
+				}
+			}
+			gettimeofday(&tfinish2, NULL);
+			duration = (tfinish2.tv_sec - tstart2.tv_sec) * 1000.0 ;
+			duration += (tfinish2.tv_usec - tstart2.tv_usec) / 1000.0 ;
+
+			cout << "signature: " << duration << endl;
+
+
+      //Encryptions
+			gettimeofday(&tstart3, NULL);
+
+			key = new unsigned char ** [sec_par];
+			ciphertext = new unsigned char ** [sec_par];
+			iv = new unsigned char ** [sec_par];
+
+      // Encrypt all (signed + watermarked) parts of the message
+			for (int i = 0; i< sec_par; i++)
+			{
+				key[i] = new unsigned char * [2];
+				ciphertext[i] = new unsigned char * [2];
+				iv[i] = new unsigned char * [2];
+				for (int j = 0; j<2; j++)
+				{
+          unsigned char * raw_message = new unsigned char [message_len + len_of_group_elem_in_bytes + 1];
+          memcpy(raw_message, message[i][j],message_len);
+          memcpy(raw_message + message_len, sig_mes[i][j], len_of_group_elem_in_bytes);
+
+					ciphertext[i][j] = encrypt(&key[i][j], &iv[i][j], raw_message, message_len + len_of_group_elem_in_bytes);
+				}
+			}
+
+			gettimeofday(&tfinish3, NULL);
+			duration = (tfinish3.tv_sec - tstart3.tv_sec) * 1000.0 ;
+			duration += (tfinish3.tv_usec - tstart3.tv_usec) / 1000.0 ;
+
+			cout << "encryption: " << duration << endl;
+
+		}	
+
+    // Get new OT_Sender for a specific message part
+		OT_Sender* new_OT_Sender(int part)
+		{
+			OT_Sender* ret = new OT_Sender(key[part], ciphertext[part], iv[part],message_len);
+			return ret;
+		}
+};
+
+
+// Class for the recipient in Oblivious Transfer
+class OT_Recipient
+{
+	private:
+		int len;
+		Pairing *e;
+		G1 g;
+		int sigma;
+		G1 c;
+		Zr k;
+		G1 pk[2];
+		unsigned char * result;
+		unsigned char ** result_part;
+		int * message_len;
+	
+	public:
+    // Constructor
+		OT_Recipient(int sigma, unsigned char ** result_part, int* message_len)
+		{
+			this->sigma = sigma;
+			this->result_part = result_part;
+			this->message_len = message_len;
+		}
+
+    // Initialization
+		void init(int len, Pairing &e, G1 g, G1 c)
+		{
+			this->len = len;
+			this->e = &e;
+			this->g = g;
+			this->c = c;
+		}
+
+    // Code for phase 1
+		G1 phase1()
+		{
+			k = Zr(*e, true);
+			pk[sigma] = g^k;	
+			pk[1-sigma] = c*(pk[sigma].inverse());
+			return pk[0];
+		}
+
+    // Code for phase 2
+		void phase3(Phase2_return ret){
+			G1 g_r_k = ret.g_r^k;
+			G1 h_g_r_k;
+			hash_G1(*e, len, &g_r_k, &h_g_r_k);
+
+
+			result = (unsigned char *) malloc(sizeof(char) * (KEYLENGTH+1));
+			result[KEYLENGTH] = '\0';
+			xor_G1(len, KEYLENGTH, &h_g_r_k , ret.enc[sigma], result);
+
+			*message_len = ret.message_len;
+
+			*result_part = decrypt(result, ret.iv[sigma], ret.ciphertext[sigma], ret.message_len);
+		}
+	
+		unsigned char* getResult(){
+			return result;
+		}	
+		int getSigma()
+		{
+			return sigma;
+		}
+};
+
+// Class for Recipient
+class Recipient{
+	private:
+		int * bitstring;
+		int sec_par;
+		unsigned char ** result;
+		int message_len;
+	public:
+    // Constructor
+		Recipient(int * bitstring, int sec_par){
+			this->bitstring = bitstring;
+			this->sec_par = sec_par;
+			result = new unsigned char * [sec_par];			
+		}	
+    // Get a new OT_Recipient for a specific message part
+		OT_Recipient* new_OT_Recipient(int part){
+			OT_Recipient* ret = new OT_Recipient(bitstring[part],&result[part], &message_len);
+			return ret;
+		}
+
+    // Last step of the protocol
+		void finish(){
+			char str[128];
+      // Dump the message parts as pgm files 
+			for (int i = 0; i < sec_par; i++){
+				sprintf(str, "/tmp/LIME/rec_out%d.pgm", i);
+				ofstream out(str); 
+				for (int j = 0; j < message_len; j++){
+					out << result[i][j];
+				}
+				out.close();
+			}
+
+      // Join all single parts to obtain the final image
+			sprintf(str,"pgm_join_split/join /tmp/LIME/rec_out %d", sec_par);
+			system(str);
+		}
+};
+
+
+
+// Perform Oblivious transfer between specified sender and recipien
+bool ot(OT_Sender* sender, OT_Recipient* recipient, Pairing &e, G1 g, int part){
+
+	int len = e.get_length_in_bytes_G1();
+
+  // Initialize parties
+	G1 c = sender->init(len, e, g);
+	recipient->init(len, e, g, c);
+
+  // Call phases 1-3
+	G1 pk0 = recipient->phase1();
+	Phase2_return ret = sender->phase2(pk0);
+	recipient->phase3(ret);
+
+// Debugging code
+/*
+	unsigned char ** key  = sender->get_key();
+	unsigned char * result = recipient->getResult();
+	int sigma = recipient->getSigma();
+	for (int i = 0; i < KEYLENGTH; i++){
+		if (key[sigma][i] != result[i]){
+			cerr << "ERROR in part " << part << ": Position " << i << ": Key: " << key[sigma][i] << ", Res: " << result[i] << endl; 
+		}
+	}
+	if( strcmp( (char *) key[sigma], (char *) result)){
+		cerr << "ERROR \n";
+		cerr << "original Message  : " << key[sigma]<< endl;
+		cerr << "enctypted Message : " << ret.enc[sigma] << endl;
+		cerr << "resulting Message : " << result << endl;
+	}	
+*/
+
+	return true;
+}
+
+// Main function (runs through the entire protocol)
+int main(int argc, char **argv){
+
+  cout << endl;
+
+  if (argc != 4){
+	  cerr << "Usage: " << argv[0] << " \"image.pgm\" \"sec_par\" \"rand_seed\" \n";
+	  return 1;
+  }
+
+  char str[256];
+  sprintf(str, "mkdir /tmp/LIME");
+  system(str);
+
+
+  //const char *paramFileName = (argc > 1) ? argv[1] : "pairing.param";
+  const char *paramFileName = "pairing.param";
+  FILE *sysParamFile = fopen(paramFileName, "r");
+  if (sysParamFile == NULL) {
+    cerr<<"Can't open the parameter file " << paramFileName << "\n";
+    cerr<<"Usage: " << argv[0] << " [paramfile]\n";
+    return 0;
+  }
+
+  //Seed ramdomness
+  int rand_seed = atoi(argv[3]);
+  srand( rand_seed);
+
+  timeval tstart, tfinish, tstart2, tfinish2;
+  double duration, duration2;
+   
+  // Initialize pairing
+  Pairing e(sysParamFile);
+  fclose(sysParamFile);  
+
+  int sec_par = atoi(argv[2]);
+  char *inputfile = argv[1];
+
+  // Generate random watermarking bitstring
+  int * bitstring;
+  bitstring = (int *) malloc(sizeof(int) * sec_par);
+  for (int i = 0; i < sec_par; i++){
+	  bitstring[i] = rand() % 2;
+  }
+
+  // Create protocol sender and recipient
+  Sender s(inputfile,sec_par,e);
+  Recipient r(bitstring,sec_par);
+
+  // Generator g
+  G1 g = G1(e,false);
+
+
+  gettimeofday(&tstart, NULL);
+
+  // Perform Oblivious transfer for all the parts
+  for (int i = 0; i < sec_par; i++){
+    OT_Sender * ot_s = s.new_OT_Sender(i);	
+    OT_Recipient * ot_r = r.new_OT_Recipient(i);
+    ot(ot_s, ot_r, e, g, i); 
+  }
+
+  r.finish();
+
+  gettimeofday(&tfinish, NULL);
+  duration = (tfinish.tv_sec - tstart.tv_sec) * 1000.0 ;
+  duration += (tfinish.tv_usec - tstart.tv_usec) / 1000.0 ;
+
+  cout << "OT: " << duration << endl;
+
+
+  // Here the protocol is finished
+  // Rest is evaluation
+  
+  gettimeofday(&tstart2, NULL);
+
+  FILE *fp;
+  char pout[256];
+  char pout2[256];
+  int errorcount = 0;
+
+  // Check if all watermarks for the single parts could be detected correctly
+  for (int i = 0; i < sec_par; i++){
+    // Blind watermarking schemes do not need the orignal watermark for verification
+    if (BLIND){
+      sprintf(str, "watermarking/Meerwald/wm_%s_d -v 0 -s /tmp/LIME/%s_0.sig -o /tmp/LIME/%s_%d_0.wm /tmp/LIME/rec_out%d.pgm", WM_ALGO, WM_ALGO, WM_ALGO, i,i);
+      system(str);
+      sprintf(str, "watermarking/Meerwald/wm_%s_d -v 0 -s /tmp/LIME/%s_0.sig -o /tmp/LIME/%s_%d_1.wm /tmp/LIME/rec_out%d.pgm", WM_ALGO, WM_ALGO, WM_ALGO, i,i);
+      system(str);
+    }
+    else{
+      sprintf(str, "watermarking/Meerwald/wm_%s_d -v 0 -i /tmp/LIME/out%d.pgm -s /tmp/LIME/%s_0.sig -o /tmp/LIME/%s_%d_0.wm /tmp/LIME/rec_out%d.pgm", WM_ALGO, i,  WM_ALGO, WM_ALGO, i,i);
+      system(str);
+      sprintf(str, "watermarking/Meerwald/wm_%s_d -v 0 -i /tmp/LIME/out%d.pgm -s /tmp/LIME/%s_0.sig -o /tmp/LIME/%s_%d_1.wm /tmp/LIME/rec_out%d.pgm", WM_ALGO, i,  WM_ALGO, WM_ALGO, i,i);
+      system(str);
+    }
+
+
+    sprintf(str, "watermarking/Meerwald/cmp_%s_sig -C -v 0 -s /tmp/LIME/%s_0.sig /tmp/LIME/%s_%d_0.wm", WM_ALGO,WM_ALGO,WM_ALGO, i);
+    fp = popen(str, "r");
+    fgets(pout, sizeof(pout) - 1, fp);
+    double corr0 = atof(pout);
+    pclose(fp);
+
+    sprintf(str, "watermarking/Meerwald/cmp_%s_sig -C -v 0 -s /tmp/LIME/%s_1.sig /tmp/LIME/%s_%d_1.wm", WM_ALGO,WM_ALGO,WM_ALGO, i);
+    fp = popen(str, "r");
+    fgets(pout2, sizeof(pout2) - 1, fp);
+    double corr1 = atof(pout2);
+    pclose(fp);
+
+    if (( corr0 < corr1) != bitstring[i]){
+      // Count all wrongly detected bits
+      errorcount++;	
+    }
+  }	
+
+  // Verify that the overall watermark can be detected correctly
+  if (BLIND){
+	sprintf(str, "watermarking/Meerwald/wm_%s_d -s /tmp/LIME/%s.sig -o /tmp/LIME/%s.wm out_complete.pgm", WM_ALGO, WM_ALGO, WM_ALGO);
+  }
+  else{
+	sprintf(str, "watermarking/Meerwald/wm_%s_d -i %s -s /tmp/LIME/%s.sig -o /tmp/LIME/%s.wm out_complete.pgm", WM_ALGO, inputfile, WM_ALGO, WM_ALGO);
+  }
+  system(str);
+  sprintf(str, "watermarking/Meerwald/cmp_%s_sig -s /tmp/LIME/%s.sig /tmp/LIME/%s.wm", WM_ALGO,WM_ALGO,WM_ALGO);
+  system(str);
+
+  gettimeofday(&tfinish2, NULL);
+  duration2 = (tfinish2.tv_sec - tstart2.tv_sec) * 1000.0 ;
+  duration2 += (tfinish2.tv_usec - tstart2.tv_usec) / 1000.0 ;
+
+  cout << "detection: " << duration2 << endl;
+
+  if (errorcount)
+    cout << endl << errorcount << " bits could not be detected correctly\n";
+  else
+	  cout << endl << "All bits were detected correctly!\n";
+  
+
+  cout << endl;
+
+  return 0; 
+}

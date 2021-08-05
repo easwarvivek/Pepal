@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>  </title>
+
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css">
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.css">
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/3/w3.css">
+
+	<link rel="stylesheet" type="text/css" href="css/app.css">
+
+
+</head>
+
+
+<body>
+
+	<!-- Header -->
+	<nav class="navbar navbar-default">
+		 <div class="container-fluid">
+
+  			<ul class="nav navbar-nav">
+  				<li onclick="home()"><a href="#">Watermark</a></li>
+      			<!--<li onclick="login()" id="login_button"> <a> Log In </a></li>-->
+  				<li onclick="downloadButton()" id="transfer_button" > <a> Download Software</a></li>
+  				<li onclick="penaltyButton()" id="penalty_button" > <a> Penalty </a></li>
+  				<li> <a href="about.html"> About Us </a> </li>
+  			</ul>
+
+  			<ul class="nav navbar-nav nav-right">	
+  				
+  				<li> <img src="img/purdue.png" /> </li>
+  				<li> <img src="img/northrop.png" /> </li>
+  			</ul>
+  		</div>
+	</nav>
+
+
+	<!-- Product Owners -->
+	<div class="row">
+		<div class="cont">
+			<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
+				<!-- Forms to enter transactions -->
+				<div class="contain" style="width: 60%" style="display:none">
+					
+					<div>
+						<form id="home" >
+							<!--<h4> Welcome to the FordChain Software. Click Log in to start.</h4> -->
+				
+						</form>
+					</div>
+					
+					<div>
+						<form id="login" style="display:none;">
+							<select name="role" id="role" style="width: 60%" onchange="populate('login', this.id, 'entity')" class="form-control"> 
+								<option value="">-- select one role --</option>
+								<option value="Owner"> Owner </option>
+								<option value="User"> User </option>
+							</select><br>
+							<select style="width: 60%" id="entity", name="entity" class="form-control">
+							</select><br>
+							
+							<button type="button" style="width:60%; font-size:15px;" class="btn btn-primary" onClick="loginUser('login')"> Switch User</button><br>
+							
+						</form>
+					</div>
+					
+					
+
+					
+
+
+					
+					<div>
+						<form id="download" style="display:none;">
+							<span class="function-message"> Download Software</span>
+							<br>
+							<span class="function-message"> Role Needed: User  </span>
+							<br><br>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 no_padding">					
+							</div>
+							
+							<br><br>
+							
+							
+							<hr>
+							<!--<select style="width: 60%" class="software_id form-control" id="software_id">
+							</select> <br> -->
+							<input type="text" id="senderPublicKey" placeholder="Sender Public Key" style="width:80%; font-size:15px;" />
+							<input type="text" id="recipientPublicKey" placeholder="Recipient Public Key" style="width:80%; font-size:15px;" />
+							<input type="text" id="amount" placeholder="Amount" style="width:80%; font-size:15px;" />
+							<input type="text" id="date" placeholder="Date (MM/DD/YYYY)" style="width:80%; font-size:15px;" /> 
+							<input type="text" id="ip" placeholder="IP Address" style="width:80%; font-size:15px;" />
+							<input type="text" id="port" placeholder="Port" style="width:80%; font-size:15px;" />
+
+
+							<button type="button" style="width:80%; font-size:15px;" class="btn btn-primary" onClick="downloadSoftware()"> Download Software </button>
+						</form>
+
+					</div>
+
+					<div>
+						<form id="penalty" style="display:none;">
+							<span class="function-message"> Penalty </span>
+							<br>
+							<br><br>
+							<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6 no_padding">					
+							</div>
+							
+							<br><br>
+							
+							
+							<hr>
+							<!--<select style="width: 60%" class="software_id form-control" id="software_id">
+							</select> <br> -->
+							<input type="text" id="penaltyMessage" placeholder="Message" style="width:80%; font-size:15px;" />
+							<input type="text" id="senderSig" placeholder="Sender Signature" style="width:80%; font-size:15px;" />
+							<input type="text" id="recipientSig" placeholder="Recipient Signature" style="width:80%; font-size:15px;" />
+							
+
+							<button type="button" style="width:80%; font-size:15px;" class="btn btn-primary" onClick="submitPenalty()"> Penalty </button>
+						</form>
+
+					</div>
+			
+				</div>
+
+			</div>
+
+		</div>
+
+	</div>
+<!--
+	<div id="vals" style="height: 50px;">
+
+	</div>
+	<button type="button" class="btn btn-primary" onClick="getBlocks()"> Print Blocks </button> <p>
+-->
+	
+	<div id="messagebox" class="row alert fade in">
+         <span id="blockchain-result" style="display:none;" > Blockchain Result </span>
+         <span  id="message"> </span>
+         <span class="col-xs-6 col-sm-6 col-md-6 col-lg-6" id="messageTwo"> </span>
+    </div>
+    <hr>
+
+	<hr>
+	<div class="row">
+    	<div style="padding-left:8px"> <h3> <u> Blockchain State </u> </h3> </div>
+		<div id="blockchain" class="col-xs-8 col-sm-8 col-md-8 col-lg-8"> </div>
+	</div>
+
+	<template id="blockTemplate">
+		<div class="block w3-container">
+  			<div class="w3-card-4 card">
+    			
+    			<header class="w3-container card-head" style="height:30px;">
+      				<h3 id="block-number"></h3>
+    			</header>
+
+    			<div class="card-content">
+    			
+    			<span class="card-title grey-text text-darken-4"> Transactions </span><p>
+	      				<div id= "txs"> </div>
+
+    			</div>
+
+    			<footer class="w3-container card-footer">
+      				<h5 class="">  </h5>
+   				</footer>
+
+  			</div>
+		</div>
+
+
+	</template>
+
+	<template id="tx-template">
+		<p> <span class="bold" id="tx-head"> Action: </span> 
+			<span id="tx-id"> </span>
+			<span id="tx-desc"> </span><br>
+		 </p>
+	</template>
+
+
+
+
+  	<footer class="navbar-default navbar-fixed-bottom">  	
+	</footer>
+
+	
+   
+
+	<script src="js/jquery.js" type="text/javascript"> </script>
+	
+	<script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"> </script>
+	
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js"></script>
+	<script src="js/bootstrap.js" type="text/javascript"> </script>
+	
+	<script src="js/app.js" type="text/javascript"> </script>
+
+
+
+</body>
+</html>

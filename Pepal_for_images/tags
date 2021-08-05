@@ -1,0 +1,91 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+G	G.cc	/^G::G(const G &h, bool identity){$/;"	f	class:G
+G1	G1.cc	/^G1::G1(const Pairing &e): G(e){$/;"	f	class:G1
+G1	G1.cc	/^G1::G1(const Pairing &e, bool identity): G(e){$/;"	f	class:G1
+G1	G1.cc	/^G1::G1(const Pairing &e, const unsigned char *data, $/;"	f	class:G1
+G1	G1.cc	/^G1::G1(const Pairing &e, const void *data, $/;"	f	class:G1
+G2	G2.cc	/^G2::G2(const Pairing &e): G(e){$/;"	f	class:G2
+G2	G2.cc	/^G2::G2(const Pairing &e, bool identity): G(e){$/;"	f	class:G2
+G2	G2.cc	/^G2::G2(const Pairing &e, const unsigned char *data, $/;"	f	class:G2
+G2	G2.cc	/^G2::G2(const Pairing &e, const void *data, $/;"	f	class:G2
+GT	GT.cc	/^GT::GT(const Pairing &e): G(e){$/;"	f	class:GT
+GT	GT.cc	/^GT::GT(const Pairing &e, bool identity): G(e){$/;"	f	class:GT
+GT	GT.cc	/^GT::GT(const Pairing &e, const unsigned char *data, $/;"	f	class:GT
+GT	GT.cc	/^GT::GT(const Pairing &e, const void *data, $/;"	f	class:GT
+OT_Sender	Testing.cc	/^		OT_Sender(int len, Pairing &e, unisgned char m [][]){$/;"	f	class:OT_Sender
+OT_Sender	Testing.cc	/^class OT_Sender{$/;"	c	file:
+PPPairing	PPPairing.cc	/^PPPairing:: PPPairing(const Pairing &e, const G1 &p): pairing(e) {$/;"	f	class:PPPairing
+Pairing	Pairing.cc	/^Pairing::Pairing(const FILE * buf){$/;"	f	class:Pairing
+Pairing	Pairing.cc	/^Pairing::Pairing(const char * buf){$/;"	f	class:Pairing
+Pairing	Pairing.cc	/^Pairing::Pairing(const char * buf, size_t len){$/;"	f	class:Pairing
+Zr	Zr.cc	/^Zr::Zr(const Pairing &e){$/;"	f	class:Zr
+Zr	Zr.cc	/^Zr::Zr(const Pairing &e, bool random){ $/;"	f	class:Zr
+Zr	Zr.cc	/^Zr::Zr(const Pairing &e, const unsigned char *data, $/;"	f	class:Zr
+Zr	Zr.cc	/^Zr::Zr(const Pairing &e, const void *data, $/;"	f	class:Zr
+Zr	Zr.cc	/^Zr::Zr(const Pairing &e, long int i){$/;"	f	class:Zr
+Zr	Zr.cc	/^Zr::Zr(const Zr &s){$/;"	f	class:Zr
+Zr	Zr.cc	/^Zr::Zr(const Zr &s, long int i){$/;"	f	class:Zr
+apply	Pairing.cc	/^const GT Pairing::apply(const G1& p, const G1& q) const{$/;"	f	class:Pairing
+apply	Pairing.cc	/^const GT Pairing::apply(const G1& p, const G2& q) const{	$/;"	f	class:Pairing
+apply	Pairing.cc	/^const GT Pairing::apply(const G2& p, const G2& q) const{	$/;"	f	class:Pairing
+dump	G.cc	/^void G::dump(FILE *f, const char *label,$/;"	f	class:G
+dump	Zr.cc	/^void Zr::dump(FILE *f, const char *label, $/;"	f	class:Zr
+e	Testing.cc	/^		Pairing e;$/;"	m	class:OT_Sender	file:
+getElement	G.cc	/^const element_t& G::getElement() const{$/;"	f	class:G
+getElement	Zr.cc	/^const element_t& Zr::getElement() const{$/;"	f	class:Zr
+getElementSize	G.cc	/^unsigned short G::getElementSize() const{$/;"	f	class:G
+getElementSize	G1.cc	/^unsigned short G1::getElementSize(bool compressed) const{$/;"	f	class:G1
+getElementSize	G2.cc	/^unsigned short G2::getElementSize(bool compressed) const{$/;"	f	class:G2
+getElementSize	Pairing.cc	/^size_t Pairing::getElementSize(PairingElementType type, $/;"	f	class:Pairing
+getElementSize	Zr.cc	/^unsigned short Zr::getElementSize() const{$/;"	f	class:Zr
+getPairing	Pairing.cc	/^const pairing_t&  Pairing::getPairing() const{$/;"	f	class:Pairing
+get_length_in_bytes_G1	Pairing.cc	/^int Pairing::get_length_in_bytes_G1(){$/;"	f	class:Pairing
+hash_G1	Testing.cc	/^void hash_G1(Pairing &e, int len, G1 *arg, G1 *res){$/;"	f
+inverse	G.cc	/^const G G::inverse()const {$/;"	f	class:G
+inverse	Zr.cc	/^const Zr Zr::inverse(bool additive) const{$/;"	f	class:Zr
+isIdentity	G.cc	/^bool G::isIdentity() const{$/;"	f	class:G
+isIdentity	Zr.cc	/^bool Zr::isIdentity(bool additive) const{$/;"	f	class:Zr
+isSymmetric	Pairing.cc	/^bool Pairing::isSymmetric() const{$/;"	f	class:Pairing
+len	Testing.cc	/^		int len;$/;"	m	class:OT_Sender	file:
+m	Testing.cc	/^		unsigned char m [][];$/;"	m	class:OT_Sender	file:
+main	Testing.cc	/^int main(int argc, char **argv)$/;"	f
+nullify	G.cc	/^void G::nullify(){$/;"	f	class:G
+nullify	Zr.cc	/^void Zr::nullify(){$/;"	f	class:Zr
+operator ()	PPPairing.cc	/^const GT PPPairing:: operator()(const G1 &q) const{$/;"	f	class:PPPairing
+operator ()	PPPairing.cc	/^const GT PPPairing:: operator()(const G2 &q) const{$/;"	f	class:PPPairing
+operator ()	Pairing.cc	/^const GT Pairing::operator()(const G1& p, const G2& q) const{$/;"	f	class:Pairing
+operator ()	Pairing.cc	/^const GT Pairing::operator()(const G1& p,$/;"	f	class:Pairing
+operator ()	Pairing.cc	/^const GT Pairing::operator()(const G2& p, $/;"	f	class:Pairing
+operator *=	G.cc	/^G& G::operator*=(const G &rhs){$/;"	f	class:G
+operator *=	Zr.cc	/^Zr& Zr::operator*=(const Zr &rhs){$/;"	f	class:Zr
+operator +=	Zr.cc	/^Zr& Zr::operator+=(const Zr &rhs){$/;"	f	class:Zr
+operator -=	Zr.cc	/^Zr& Zr::operator-=(const Zr &rhs){$/;"	f	class:Zr
+operator /=	G.cc	/^G& G::operator\/=(const G &rhs){$/;"	f	class:G
+operator /=	Zr.cc	/^Zr& Zr::operator\/=(const Zr &rhs){  $/;"	f	class:Zr
+operator =	G.cc	/^G& G::operator=(const G &rhs){$/;"	f	class:G
+operator =	Zr.cc	/^Zr& Zr::operator=(const Zr &rhs){  $/;"	f	class:Zr
+operator ==	G.cc	/^bool G::operator==(const G &rhs) const{$/;"	f	class:G
+operator ==	Zr.cc	/^bool Zr::operator==(const Zr &rhs) const{$/;"	f	class:Zr
+operator ^=	G.cc	/^G& G::operator^=(const Zr &exp){$/;"	f	class:G
+operator ^=	Zr.cc	/^Zr& Zr::operator^=(const Zr &rhs){$/;"	f	class:Zr
+ot	Testing.cc	/^bool ot(Pairing &e){$/;"	f
+setElement	G.cc	/^void G::setElement(const element_t& el){$/;"	f	class:G
+setElement	Zr.cc	/^void Zr::setElement(const element_t& el){$/;"	f	class:Zr
+square	G.cc	/^const G G::square()const {$/;"	f	class:G
+square	Zr.cc	/^const Zr Zr::square() const{$/;"	f	class:Zr
+toBytes	G.cc	/^void G::toBytes(unsigned char e_bytes[]) {$/;"	f	class:G
+toString	G.cc	/^string G::toString() const {$/;"	f	class:G
+toString	G1.cc	/^string G1::toString(bool compressed) const {$/;"	f	class:G1
+toString	G2.cc	/^string G2::toString(bool compressed) const {$/;"	f	class:G2
+toString	Zr.cc	/^string Zr::toString() const {$/;"	f	class:Zr
+xor_G1	Testing.cc	/^void  xor_G1(int len, G1* a, unsigned char b[], unsigned char res[]){$/;"	f
+xor_array	Testing.cc	/^void xor_array(int len, unsigned char a[], unsigned char b[], unsigned char res[]){$/;"	f
+~G	G.cc	/^G::~G(){$/;"	f	class:G
+~PPPairing	PPPairing.cc	/^PPPairing:: ~PPPairing(){$/;"	f	class:PPPairing
+~Pairing	Pairing.cc	/^Pairing::~Pairing(){$/;"	f	class:Pairing
+~Zr	Zr.cc	/^Zr::~Zr(){$/;"	f	class:Zr

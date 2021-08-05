@@ -1,0 +1,13 @@
+set output 'graph_sec_par.eps'
+set terminal postscript enhanced monochrome dashed dl 4 eps 
+
+set xlabel "number of document parts" 
+set ylabel "computation time (ms)" 
+
+set key inside top left
+
+plot "eval/result/sec_par.watermarking" using 1:2 with lines title "watermarking" linetype 1, "" using 1:2:3 with errorbars notitle lt -1 lc 0 ,  \
+  "eval/result/sec_par.signature" using 1:2 with lines title "signatures" linetype 2, "" using 1:2:3 with errorbars notitle  lt -1 lc 0,  \
+  "eval/result/sec_par.encryption" using 1:2 with lines title "encryption" linetype 6, "" using 1:2:3 with errorbars notitle lt -1 lc 0,  \
+  "eval/result/sec_par.ot" using 1:2 with lines title "OT" linetype 4, "" using 1:2:3 with errorbars notitle lt -1 lc 0,  \
+  "eval/result/sec_par.detection" using 1:2 with lines title "detection" linetype 8, "" using 1:2:3 with errorbars notitle lt -1 lc 0 
